@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração de Senhas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f5;
+            margin: 0;
+        }
+        #password-registration {
+            text-align: center;
+            padding: 20px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 300px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="password-registration">
+        <h2>Cadastrar Nova Senha</h2>
+        <input type="password" id="newPassword" placeholder="Digite a nova senha" />
+        <button onclick="registerPassword()">Cadastrar Senha</button>
+        <div id="registerMessage"></div>
+    </div>
+
+    <script>
+        function registerPassword() {
+            const newPassword = document.getElementById("newPassword").value;
+            const registerMessage = document.getElementById("registerMessage");
+
+            if (newPassword) {
+                // Aqui você pode adicionar a nova senha ao arquivo JSON manualmente.
+                // Por exemplo, abra o 'passwords.json' em um editor de texto e adicione:
+                // { "password": "novaSenha", "used": false },
+                // garantindo que a formatação JSON seja mantida.
+
+                registerMessage.innerText = "Nova senha deve ser adicionada manualmente ao arquivo passwords.json.";
+                document.getElementById("newPassword").value = "";
+            } else {
+                registerMessage.innerText = "Digite uma senha válida.";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Racker WinGo</title>
+    <link rel="icon" href="https://i.im.ge/2024/10/26/kgOdky.Racker-WinGo-2.png" type="image/png">
+    <meta name="apple-mobile-web-app-title" content="Racker WinGo">
+    <meta name="application-name" content="Racker WinGo">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            overflow: hidden;
+            height: 100vh;
+        }
+        #topo {
+            width: 100%;
+            height: calc(100vh - 20vh);
+            overflow: auto;
+        }
+        #topo iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #baixo {
+            width: 100%;
+            height: 20vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            bottom: 0;
+            background-color: white;
+            z-index: 1000;
+        }
+        #historicoBtn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+            background-color: gray;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #audioToggle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+        }
+        #historicoPopup {
+            display: none;
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -20%);
+            background-color: white;
+            border: 1px solid gray;
+            border-radius: 8px;
+            padding: 20px;
+            width: 80%;
+            max-width: 300px;
+            max-height: 460px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+        #historicoPopup h3 {
+            margin-top: 0;
+        }
+        #closePopup {
+            cursor: pointer;
+            color: red;
+            font-weight: bold;
+            position: absolute;
+            top: 5px;
+            right: 10px;
+        }
+        #historicoLista {
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-top: 10px;
+            border-top: 1px solid #ccc;
+        }
+        #sinal {
+            margin-top: 10px;
+            display: none;
+        }
+        .sinal-opcao {
+            border-radius: 10px;
+            padding: 10px;
+            color: white;
+            margin: 5px;
+            display: none;
+        }
+        #grande {
+            background-color: orange;
+        }
+        #pequeno {
+            background-color: blue;
+        }
+        #vermelho {
+            background-color: red;
+        }
+        #verde {
+            background-color: green;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: green;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #loading {
+            display: none;
+            margin-top: 10px;
+            border: 4px solid transparent;
+            border-top: 4px solid green;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        #cronometro {
+            font-size: 20px;
+            margin-top: 10px;
+        }
+        .loading-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top: 4px solid green;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="topo">
+        <iframe src="https://poppg.com/#/home/AllLotteryGames/WinGo?id=1"></iframe>
+    </div>
+    <script src="login.js"></script> <!-- Inclusão do arquivo de login -->
+
+    <div id="baixo">
+        <button id="historicoBtn" onclick="abrirHistorico()">Histórico</button>
+        <button id="gerarSinalBtn" onclick="gerarSinal()">Gerar Sinal</button>
+        <div id="mensagem"></div>
+        <div id="loading"></div>
+        <div id="sinal">
+            <div id="grande" class="sinal-opcao">Grande</div>
+            <div id="pequeno" class="sinal-opcao">Pequeno</div>
+            <div id="vermelho" class="sinal-opcao">Vermelho</div>
+            <div id="verde" class="sinal-opcao">Verde</div>
+        </div>
+        <div id="cronometroContainer" style="display: none; margin-top: 10px;">
+            <span id="aguardeMsg" style="display: none;">Aguarde para gerar outro Sinal</span>
+            <div id="cronometro">20</div>
+            <div class="" id=""></div>
+        </div>
+        <!-- Botão de áudio -->
+        <img id="audioToggle" src="https://img.icons8.com/ios-glyphs/30/000000/speaker.png" alt="Toggle Audio" onclick="toggleAudio()">
+    </div>
+
+    <div id="historicoPopup">
+        <span id="closePopup" onclick="fecharHistorico()">×</span>
+        <h3>Histórico de Resultados</h3>
+        <div id="historicoLista"></div>
+    </div>
+
+    <script>
+        let tempoRestante = 20;
+        let intervalo;
+        let audioEnabled = true; // Variável para controlar o estado do áudio
+
+        // Função para sintetizar voz do texto
+        function speakText(text) {
+            if (audioEnabled) { // Só reproduz o áudio se estiver habilitado
+                // Substitui "WinGo" por uma pronúncia mais clara
+                const adjustedText = text.replace(/WinGo/g, "Win Go");
+                const utterance = new SpeechSynthesisUtterance(adjustedText);
+                utterance.lang = 'pt-BR'; // Define o idioma para português
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Função para alternar o áudio
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const audioToggleIcon = document.getElementById('audioToggle');
+            if (audioEnabled) {
+                audioToggleIcon.src = "https://img.icons8.com/ios-glyphs/30/000000/speaker.png"; // Ícone de som
+            } else {
+                audioToggleIcon.src = "https://img.icons8.com/ios-glyphs/30/000000/mute.png"; // Ícone de mudo
+            }
+        }
+
+        // Carrega o histórico do localStorage ao carregar a página
+        document.addEventListener("DOMContentLoaded", carregarHistorico);
+
+        function gerarSinal() {
+            const mensagemDiv = document.getElementById('mensagem');
+            const sinalDiv = document.getElementById('sinal');
+            const gerarSinalBtn = document.getElementById('gerarSinalBtn');
+            const loadingDiv = document.getElementById('loading');
+            const cronometroDiv = document.getElementById('cronometro');
+            const cronometroContainer = document.getElementById('cronometroContainer');
+            const aguardeMsg = document.getElementById('aguardeMsg');
+
+            gerarSinalBtn.style.display = 'none';
+            const textoInicial = "Analisando o Jogo WinGo";
+            mensagemDiv.innerText = textoInicial;
+            speakText(textoInicial); // Reproduz o texto por áudio
+            sinalDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            tempoRestante = 20;
+            cronometroDiv.innerText = tempoRestante;
+
+            setTimeout(() => {
+                const textoAnalise = "Gerando o melhor Sinal";
+                mensagemDiv.innerText = textoAnalise;
+                speakText(textoAnalise); // Reproduz o texto por áudio
+            }, 2000);
+
+            setTimeout(() => {
+                mensagemDiv.innerText = "";
+                const opcoes = ['grande', 'pequeno', 'vermelho', 'verde'];
+                const opcaoEscolhida = opcoes[Math.floor(Math.random() * opcoes.length)];
+
+                document.querySelectorAll('.sinal-opcao').forEach(opcao => {
+                    opcao.style.display = 'none';
+                });
+
+                const sinalElement = document.getElementById(opcaoEscolhida);
+                sinalElement.style.display = 'block';
+                sinalDiv.style.display = 'block';
+                loadingDiv.style.display = 'none';
+
+                const textoGerado = `Aposte no sinal: ${opcaoEscolhida.charAt(0).toUpperCase() + opcaoEscolhida.slice(1)}`;
+                speakText(textoGerado); // Reproduz o texto com "Aposte no sinal"
+                aguardeMsg.style.display = 'block';
+                cronometroContainer.style.display = 'block';
+
+                // Adiciona o sinal ao histórico com o mesmo estilo e atualiza localStorage
+                adicionarAoHistorico(sinalElement);
+
+                intervalo = setInterval(() => {
+                    tempoRestante--;
+                    cronometroDiv.innerText = tempoRestante;
+
+                    if (tempoRestante <= 0) {
+                        clearInterval(intervalo);
+                        gerarSinalBtn.style.display = 'block';
+                        cronometroContainer.style.display = 'none';
+                        aguardeMsg.style.display = 'none';
+                    }
+                }, 1000);
+            }, 5000);
+        }
+
+        function adicionarAoHistorico(sinalElement) {
+            const historicoLista = document.getElementById('historicoLista');
+
+            // Adiciona o novo sinal ao histórico visual na interface
+            const novoSinal = sinalElement.cloneNode(true);
+            novoSinal.style.display = 'block';
+            historicoLista.prepend(novoSinal);
+
+            // Atualiza o localStorage com o novo histórico completo
+            let historico = JSON.parse(localStorage.getItem("historicoResultados")) || [];
+            historico.unshift(novoSinal.outerHTML);
+            localStorage.setItem("historicoResultados", JSON.stringify(historico));
+        }
+
+        function abrirHistorico() {
+            document.getElementById('historicoPopup').style.display = 'block';
+
+            // Garante que todos os itens do histórico sejam exibidos ao abrir o popup
+            const historico = JSON.parse(localStorage.getItem("historicoResultados")) || [];
+            const historicoLista = document.getElementById('historicoLista');
+
+            historicoLista.innerHTML = ""; // Limpa o conteúdo antes de recarregar o histórico
+
+            historico.forEach(sinalHTML => {
+                const item = document.createElement("div");
+                item.innerHTML = sinalHTML;
+                historicoLista.appendChild(item.firstChild);
+            });
+        }
+
+        function fecharHistorico() {
+            document.getElementById('historicoPopup').style.display = 'none';
+        }
+
+        function carregarHistorico() {
+            const historico = JSON.parse(localStorage.getItem("historicoResultados")) || [];
+            const historicoLista = document.getElementById('historicoLista');
+
+            // Carrega todo o histórico do localStorage na interface
+            historico.forEach(sinalHTML => {
+                const item = document.createElement("div");
+                item.innerHTML = sinalHTML;
+                historicoLista.appendChild(item.firstChild);
+            });
+        }
+    </script>
+
+</body>
+</html>
